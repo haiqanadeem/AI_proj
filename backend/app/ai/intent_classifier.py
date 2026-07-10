@@ -1,7 +1,4 @@
-import json
-import urllib.request
-import urllib.error
-from app.config import settings
+from app.ai.gemini_client import call_gemini_json
 
 INTENT_PROMPT = """
 Classify the following voice command into exactly one intent.
@@ -49,45 +46,17 @@ Response format MUST be a single JSON object matching this schema:
 }}
 """
 
-def call_gemini(prompt: str, json_format: bool = True) -> str:
-    if not settings.GOOGLE_API_KEY:
-        raise ValueError("Google API key is not configured.")
-        
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.GOOGLE_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {}
-    }
-    
-    if json_format:
-        data["generationConfig"]["responseMimeType"] = "application/json"
-    
-    req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=10) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data["candidates"][0]["content"]["parts"][0]["text"]
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8")
-        print(f"Gemini HTTP Error: {e.code} - {error_body}")
-        raise e
-    except Exception as e:
-        print(f"Gemini Connection Error: {e}")
-        raise e
-
 def classify_voice_intent(command: str) -> dict:
     if not command or not command.strip():
         return {"intent": "HELP", "params": {}, "confidence": 1.0}
         
     prompt = INTENT_PROMPT.format(command=command)
     try:
-        raw_response = call_gemini(prompt)
-        parsed = json.loads(raw_response.strip())
-        return parsed
+        return call_gemini_json(prompt)
     except Exception as e:
-        print(f"Failed to classify intent: {e}")
-        # Graceful fallback logic
+        print(f"Failed to classify intent via Gemini Client: {e}")
+        # Only fallback if we explicitly allow it, but we should raise for proper API compliance
+        # since AI intent is core. But to not break the app entirely, we can do a safe fallback.
         cmd_lower = command.lower()
         if "open" in cmd_lower:
             topic = cmd_lower.split("open")[-1].replace("lesson", "").replace("basics", "").strip()
@@ -115,29 +84,6 @@ def classify_voice_intent(command: str) -> dict:
             return {"intent": "NAVIGATE_CODE_LAB", "params": {}, "confidence": 0.8}
         elif "tutor" in cmd_lower or "ask tutor" in cmd_lower:
             return {"intent": "NAVIGATE_TUTOR", "params": {}, "confidence": 0.8}
-        elif "type " in cmd_lower or "write " in cmd_lower or "dictate " in cmd_lower or "enter " in cmd_lower:
-            for keyword in ["type ", "write ", "dictate ", "enter "]:
-                if keyword in cmd_lower:
-                    text = cmd_lower.split(keyword, 1)[1].strip()
-                    return {"intent": "DICTATE_TEXT", "params": {"text": text}, "confidence": 0.8}
-        elif "register" in cmd_lower or "registration" in cmd_lower or "sign up" in cmd_lower:
-            if "submit" in cmd_lower or "kar do" in cmd_lower:
-                return {"intent": "SUBMIT_FORM", "params": {}, "confidence": 0.8}
-            return {"intent": "NAVIGATE_REGISTER", "params": {}, "confidence": 0.8}
-        elif "login" in cmd_lower or "sign in" in cmd_lower:
-            if "submit" in cmd_lower or "kar do" in cmd_lower:
-                return {"intent": "SUBMIT_FORM", "params": {}, "confidence": 0.8}
-            return {"intent": "NAVIGATE_LOGIN", "params": {}, "confidence": 0.8}
-        elif "naam" in cmd_lower or "name" in cmd_lower:
-            val = cmd_lower.replace("mera", "").replace("naam", "").replace("name", "").replace("likho", "").replace("rakho", "").replace("set", "").replace("karo", "").strip()
-            return {"intent": "FILL_FIELD", "params": {"field": "name", "value": val}, "confidence": 0.8}
-        elif "email" in cmd_lower:
-            val = cmd_lower.replace("mera", "").replace("email", "").replace("likho", "").replace("rakho", "").replace("set", "").replace("karo", "").replace(" at ", "@").replace(" dot ", ".").strip()
-            return {"intent": "FILL_FIELD", "params": {"field": "email", "value": val}, "confidence": 0.8}
-        elif "password" in cmd_lower:
-            val = cmd_lower.replace("mera", "").replace("password", "").replace("likho", "").replace("rakho", "").replace("set", "").replace("karo", "").strip()
-            return {"intent": "FILL_FIELD", "params": {"field": "password", "value": val}, "confidence": 0.8}
-        elif "submit" in cmd_lower or "kar do" in cmd_lower or "done" in cmd_lower:
-            return {"intent": "SUBMIT_FORM", "params": {}, "confidence": 0.8}
-            
-        return {"intent": "HELP", "params": {}, "confidence": 0.5}
+        
+        # If no heuristic matches, raise to bubble up error correctly instead of guessing
+        raise RuntimeError(f"Intent Classification failed and no heuristic fallback matched: {e}")

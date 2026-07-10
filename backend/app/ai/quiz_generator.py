@@ -1,5 +1,5 @@
 import json
-from app.ai.intent_classifier import call_gemini
+from app.ai.gemini_client import call_gemini
 
 QUIZ_PROMPT = """
 Generate a programming quiz based on the following:

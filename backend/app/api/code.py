@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.user import User
+from app.models.lesson import Lesson
 from app.models.code_submission import CodeSubmission
 from app.services.auth_service import get_current_user
 from app.services.code_sandbox import execute_code_safely
@@ -57,8 +58,15 @@ def analyze_code(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Get lesson context if available
+        rag_context = "No specific lesson context."
+        if req.lesson_id:
+            lesson = db.query(Lesson).filter(Lesson.id == req.lesson_id).first()
+            if lesson:
+                rag_context = lesson.content
+
         # Call Gemini to get plain-text analysis of error
-        analysis = analyze_student_code(req.code, req.execution_error)
+        analysis = analyze_student_code(req.code, req.execution_error, rag_context)
         
         # Find the last submission and attach the AI explanation
         last_sub = db.query(CodeSubmission).filter(

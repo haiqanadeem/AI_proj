@@ -28,27 +28,27 @@ async def transcribe_audio(
     audio: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(status_code=400, detail="OpenAI API key not configured for Whisper fallback.")
-        
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        from faster_whisper import WhisperModel
+        # Load the model (this will be downloaded once and cached)
+        # Using base model for good balance of speed and accuracy on CPU
+        # compute_type="int8" reduces memory usage with almost no quality loss
+        model = WhisperModel("base", device="cpu", compute_type="int8")
         
         # Write upload to temp file using safe uuid
         temp_dir = tempfile.gettempdir()
-        file_ext = os.path.splitext(audio.filename)[1] or ".webm"
+        file_ext = os.path.splitext(audio.filename)[1] or ".m4a"
         temp_path = os.path.join(temp_dir, f"codesight_upload_{current_user.id}_{uuid.uuid4().hex}{file_ext}")
         
         with open(temp_path, "wb") as f:
             f.write(await audio.read())
             
-        # Send to Whisper
-        with open(temp_path, "rb") as audio_file:
-            transcript_res = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
+        # Transcribe with faster-whisper
+        segments, info = model.transcribe(temp_path, beam_size=5)
+        
+        transcript_text = ""
+        for segment in segments:
+            transcript_text += segment.text + " "
             
         try:
             os.remove(temp_path)
@@ -56,12 +56,12 @@ async def transcribe_audio(
             pass
             
         return {
-            "transcript": transcript_res.text,
+            "transcript": transcript_text.strip(),
             "confidence": 0.95,
             "duration_sec": 0.0
         }
     except Exception as e:
-        print(f"Whisper transcription failed: {e}")
+        print(f"Faster-Whisper transcription failed: {e}")
         raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
 
 @router.post("/ai/classify-intent", response_model=IntentResponse)
