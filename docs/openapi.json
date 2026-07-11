@@ -1,0 +1,1441 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "CodeSight AI API",
+        "description": "Voice-First Programming Learning Platform for Visually Impaired Students Backend API",
+        "version": "1.0"
+    },
+    "paths": {
+        "/auth/register": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register",
+                "operationId": "register_auth_register_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserRegister"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "operationId": "login_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_login_auth_login_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get Me",
+                "operationId": "get_me_auth_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/lessons": {
+            "get": {
+                "tags": [
+                    "lessons"
+                ],
+                "summary": "Get Lessons",
+                "operationId": "get_lessons_lessons_get",
+                "parameters": [
+                    {
+                        "name": "difficulty",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Difficulty"
+                        }
+                    },
+                    {
+                        "name": "topic",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Topic"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LessonListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lessons/{lesson_id}": {
+            "get": {
+                "tags": [
+                    "lessons"
+                ],
+                "summary": "Get Lesson",
+                "operationId": "get_lesson_lessons__lesson_id__get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "lesson_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Lesson Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LessonDetailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/voice/transcribe": {
+            "post": {
+                "tags": [
+                    "voice"
+                ],
+                "summary": "Transcribe Audio",
+                "operationId": "transcribe_audio_voice_transcribe_post",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_transcribe_audio_voice_transcribe_post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/ai/classify-intent": {
+            "post": {
+                "tags": [
+                    "voice"
+                ],
+                "summary": "Classify Intent",
+                "operationId": "classify_intent_ai_classify_intent_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IntentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IntentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/tutor/chat": {
+            "post": {
+                "tags": [
+                    "tutor"
+                ],
+                "summary": "Tutor Chat",
+                "operationId": "tutor_chat_tutor_chat_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/quiz/generate": {
+            "post": {
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Generate Quiz",
+                "operationId": "generate_quiz_quiz_generate_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QuizGenerateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/quiz/submit": {
+            "post": {
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Submit Quiz",
+                "operationId": "submit_quiz_quiz_submit_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QuizSubmitRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/code/execute": {
+            "post": {
+                "tags": [
+                    "code"
+                ],
+                "summary": "Execute Code",
+                "operationId": "execute_code_code_execute_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CodeExecuteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/code/analyze": {
+            "post": {
+                "tags": [
+                    "code"
+                ],
+                "summary": "Analyze Code",
+                "operationId": "analyze_code_code_analyze_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CodeAnalyzeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/progress": {
+            "get": {
+                "tags": [
+                    "progress"
+                ],
+                "summary": "Get Student Progress Summary",
+                "operationId": "get_student_progress_summary_progress_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/progress/recommend": {
+            "get": {
+                "tags": [
+                    "progress"
+                ],
+                "summary": "Get Recommend",
+                "operationId": "get_recommend_progress_recommend_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ]
+            }
+        },
+        "/voice-logs": {
+            "post": {
+                "tags": [
+                    "voice_logs"
+                ],
+                "summary": "Create Voice Log",
+                "operationId": "create_voice_log_voice_logs_post",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VoiceLogCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VoiceLogResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "voice_logs"
+                ],
+                "summary": "Get User Voice Logs",
+                "operationId": "get_user_voice_logs_voice_logs_get",
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 50,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/VoiceLogResponse"
+                                    },
+                                    "title": "Response Get User Voice Logs Voice Logs Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "summary": "Read Root",
+                "operationId": "read_root__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "summary": "Health Check",
+                "description": "Comprehensive health check endpoint (DB, ChromaDB, Gemini).",
+                "operationId": "health_check_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Body_login_auth_login_post": {
+                "properties": {
+                    "grant_type": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^password$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Grant Type"
+                    },
+                    "username": {
+                        "type": "string",
+                        "title": "Username"
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password",
+                        "title": "Password"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "title": "Scope",
+                        "default": ""
+                    },
+                    "client_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Client Id"
+                    },
+                    "client_secret": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "format": "password",
+                        "title": "Client Secret"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "title": "Body_login_auth_login_post"
+            },
+            "Body_transcribe_audio_voice_transcribe_post": {
+                "properties": {
+                    "audio": {
+                        "type": "string",
+                        "contentMediaType": "application/octet-stream",
+                        "title": "Audio"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "audio"
+                ],
+                "title": "Body_transcribe_audio_voice_transcribe_post"
+            },
+            "ChatRequest": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id"
+                    },
+                    "lesson_context": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LessonContext"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message",
+                    "session_id"
+                ],
+                "title": "ChatRequest"
+            },
+            "ChatResponse": {
+                "properties": {
+                    "response": {
+                        "type": "string",
+                        "title": "Response"
+                    },
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id"
+                    },
+                    "tokens_used": {
+                        "type": "integer",
+                        "title": "Tokens Used"
+                    },
+                    "rag_sources": {
+                        "items": {},
+                        "type": "array",
+                        "title": "Rag Sources"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "response",
+                    "session_id",
+                    "tokens_used",
+                    "rag_sources"
+                ],
+                "title": "ChatResponse"
+            },
+            "CodeAnalyzeRequest": {
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "title": "Code"
+                    },
+                    "execution_error": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Execution Error"
+                    },
+                    "lesson_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Lesson Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "code"
+                ],
+                "title": "CodeAnalyzeRequest"
+            },
+            "CodeExecuteRequest": {
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "title": "Code"
+                    },
+                    "language": {
+                        "type": "string",
+                        "title": "Language",
+                        "default": "python"
+                    },
+                    "lesson_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Lesson Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "code"
+                ],
+                "title": "CodeExecuteRequest"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "IntentRequest": {
+                "properties": {
+                    "transcript": {
+                        "type": "string",
+                        "title": "Transcript"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "transcript"
+                ],
+                "title": "IntentRequest"
+            },
+            "IntentResponse": {
+                "properties": {
+                    "intent": {
+                        "type": "string",
+                        "title": "Intent"
+                    },
+                    "params": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Params"
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "title": "Confidence"
+                    },
+                    "raw_command": {
+                        "type": "string",
+                        "title": "Raw Command"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "intent",
+                    "params",
+                    "confidence",
+                    "raw_command"
+                ],
+                "title": "IntentResponse"
+            },
+            "LessonBrief": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Title"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "title": "Slug"
+                    },
+                    "topic": {
+                        "type": "string",
+                        "title": "Topic"
+                    },
+                    "difficulty": {
+                        "type": "string",
+                        "title": "Difficulty"
+                    },
+                    "order_index": {
+                        "type": "integer",
+                        "title": "Order Index"
+                    },
+                    "estimated_minutes": {
+                        "type": "integer",
+                        "title": "Estimated Minutes"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "slug",
+                    "topic",
+                    "difficulty",
+                    "order_index",
+                    "estimated_minutes"
+                ],
+                "title": "LessonBrief"
+            },
+            "LessonContext": {
+                "properties": {
+                    "lesson_id": {
+                        "type": "integer",
+                        "title": "Lesson Id"
+                    },
+                    "topic": {
+                        "type": "string",
+                        "title": "Topic"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "lesson_id",
+                    "topic"
+                ],
+                "title": "LessonContext"
+            },
+            "LessonDetailResponse": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "Title"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "title": "Slug"
+                    },
+                    "topic": {
+                        "type": "string",
+                        "title": "Topic"
+                    },
+                    "difficulty": {
+                        "type": "string",
+                        "title": "Difficulty"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content"
+                    },
+                    "code_example": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Code Example"
+                    },
+                    "order_index": {
+                        "type": "integer",
+                        "title": "Order Index"
+                    },
+                    "estimated_minutes": {
+                        "type": "integer",
+                        "title": "Estimated Minutes"
+                    },
+                    "user_progress": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ProgressResponse"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "slug",
+                    "topic",
+                    "difficulty",
+                    "content",
+                    "code_example",
+                    "order_index",
+                    "estimated_minutes"
+                ],
+                "title": "LessonDetailResponse"
+            },
+            "LessonListResponse": {
+                "properties": {
+                    "lessons": {
+                        "items": {
+                            "$ref": "#/components/schemas/LessonBrief"
+                        },
+                        "type": "array",
+                        "title": "Lessons"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "lessons",
+                    "total"
+                ],
+                "title": "LessonListResponse"
+            },
+            "ProgressResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "completion_pct": {
+                        "type": "integer",
+                        "title": "Completion Pct"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status",
+                    "completion_pct"
+                ],
+                "title": "ProgressResponse"
+            },
+            "QuizGenerateRequest": {
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "title": "Topic"
+                    },
+                    "difficulty": {
+                        "type": "string",
+                        "title": "Difficulty"
+                    },
+                    "lesson_id": {
+                        "type": "integer",
+                        "title": "Lesson Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "topic",
+                    "difficulty",
+                    "lesson_id"
+                ],
+                "title": "QuizGenerateRequest"
+            },
+            "QuizSubmitRequest": {
+                "properties": {
+                    "lesson_id": {
+                        "type": "integer",
+                        "title": "Lesson Id"
+                    },
+                    "quiz_json": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Quiz Json"
+                    },
+                    "answers": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Answers"
+                    },
+                    "time_taken_sec": {
+                        "type": "integer",
+                        "title": "Time Taken Sec"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "lesson_id",
+                    "quiz_json",
+                    "answers",
+                    "time_taken_sec"
+                ],
+                "title": "QuizSubmitRequest"
+            },
+            "TokenResponse": {
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "title": "Access Token"
+                    },
+                    "token_type": {
+                        "type": "string",
+                        "title": "Token Type"
+                    },
+                    "user": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "User"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "access_token",
+                    "token_type",
+                    "user"
+                ],
+                "title": "TokenResponse"
+            },
+            "UserRegister": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "title": "Password"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "email",
+                    "password"
+                ],
+                "title": "UserRegister"
+            },
+            "UserResponse": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "email": {
+                        "type": "string",
+                        "title": "Email"
+                    },
+                    "level": {
+                        "type": "string",
+                        "title": "Level"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "level",
+                    "created_at"
+                ],
+                "title": "UserResponse"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "VoiceLogCreate": {
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "title": "Command"
+                    },
+                    "intent_detected": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Intent Detected"
+                    },
+                    "confidence_score": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Confidence Score"
+                    },
+                    "execution_time_ms": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Execution Time Ms"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "command"
+                ],
+                "title": "VoiceLogCreate"
+            },
+            "VoiceLogResponse": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "title": "User Id"
+                    },
+                    "command": {
+                        "type": "string",
+                        "title": "Command"
+                    },
+                    "intent_detected": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Intent Detected"
+                    },
+                    "confidence_score": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Confidence Score"
+                    },
+                    "execution_time_ms": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Execution Time Ms"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "command",
+                    "intent_detected",
+                    "confidence_score",
+                    "execution_time_ms",
+                    "timestamp"
+                ],
+                "title": "VoiceLogResponse"
+            }
+        },
+        "securitySchemes": {
+            "OAuth2PasswordBearer": {
+                "type": "oauth2",
+                "flows": {
+                    "password": {
+                        "scopes": {},
+                        "tokenUrl": "/auth/login"
+                    }
+                }
+            }
+        }
+    }
+}
