@@ -45,6 +45,8 @@ class LessonDetailResponse(BaseModel):
     order_index: int
     estimated_minutes: int
     user_progress: Optional[ProgressResponse] = None
+    next_lesson_id: Optional[int] = None
+    prev_lesson_id: Optional[int] = None
     class Config:
         orm_mode = True
         from_attributes = True
@@ -97,6 +99,10 @@ def get_lesson(
             db.commit()
             db.refresh(progress)
         user_progress = progress
+
+    # Get next and previous lesson IDs
+    next_lesson = db.query(Lesson).filter(Lesson.order_index > lesson.order_index).order_by(Lesson.order_index.asc()).first()
+    prev_lesson = db.query(Lesson).filter(Lesson.order_index < lesson.order_index).order_by(Lesson.order_index.desc()).first()
         
     return {
         "id": lesson.id,
@@ -108,5 +114,7 @@ def get_lesson(
         "code_example": lesson.code_example,
         "order_index": lesson.order_index,
         "estimated_minutes": lesson.estimated_minutes,
-        "user_progress": user_progress
+        "user_progress": user_progress,
+        "next_lesson_id": next_lesson.id if next_lesson else None,
+        "prev_lesson_id": prev_lesson.id if prev_lesson else None
     }

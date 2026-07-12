@@ -1,0 +1,31 @@
+export * from "../services/schemas/auth";
+export * from "../services/schemas/lessons";
+export * from "../services/schemas/quiz";
+export * from "../services/schemas/code";
+export * from "../services/schemas/progress";
+export * from "../services/schemas/voice";
+export * from "../services/schemas/tutor";
+export * from "../services/schemas/voiceLogs";
+
+import { z } from "zod";
+import * as auth from "../services/schemas/auth";
+import * as lessons from "../services/schemas/lessons";
+import * as quiz from "../services/schemas/quiz";
+import * as code from "../services/schemas/code";
+import * as progress from "../services/schemas/progress";
+import * as voice from "../services/schemas/voice";
+import * as tutor from "../services/schemas/tutor";
+import * as voiceLogs from "../services/schemas/voiceLogs";
+
+export type LessonResponse = z.infer<typeof lessons.LessonResponseSchema>;
+export type QuizQuestion = z.infer<typeof quiz.QuizQuestionSchema>;
+export type QuizGenerateResponse = z.infer<typeof quiz.QuizGenerateResponseSchema>;
+export type QuizResultResponse = z.infer<typeof quiz.QuizResultResponseSchema>;
+export type CodeExecuteResponse = z.infer<typeof code.CodeExecuteResponseSchema>;
+export type CodeAnalyzeResponse = z.infer<typeof code.CodeAnalyzeResponseSchema>;
+export type ProgressResponse = z.infer<typeof progress.ProgressResponseSchema>;
+export type RecommendationResponse = z.infer<typeof progress.RecommendationResponseSchema>;
+export type TranscribeResponse = z.infer<typeof voice.TranscribeResponseSchema>;
+export type IntentResponse = z.infer<typeof voice.IntentResponseSchema>;
+export type ChatResponse = z.infer<typeof tutor.ChatResponseSchema>;
+export type VoiceLogResponse = z.infer<typeof voiceLogs.VoiceLogResponseSchema>;
