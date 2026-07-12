@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/contexts/AuthContext";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -15,6 +16,7 @@ const links = [
 
 export function AppNav() {
   const pathname = usePathname();
+  const { logout, isAuthenticated } = useAuth();
 
   return (
     <nav aria-label="Main navigation" className="w-full bg-card border-b border-border p-4 flex flex-col md:flex-row justify-between items-center shadow-sm gap-4">
@@ -34,6 +36,16 @@ export function AppNav() {
             </Link>
           </li>
         ))}
+        {isAuthenticated && (
+          <li>
+            <button
+              onClick={logout}
+              className="px-3 py-2 rounded-md font-medium text-lg text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive"
+            >
+              Logout
+            </button>
+          </li>
+        )}
       </ul>
       <ThemeToggle />
     </nav>

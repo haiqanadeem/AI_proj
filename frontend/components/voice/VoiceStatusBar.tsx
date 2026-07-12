@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect } from "react";
 import { useVoice } from "@/contexts/VoiceContext";
 import { VoiceState } from "@/lib/constants";
 
@@ -38,13 +39,25 @@ export function VoiceStatusBar() {
   }
 
   if (isSpeaking && voiceState !== VoiceState.ACTIVE_LISTENING) {
-      message = "Speaking... (Mic paused)";
+    message = "Speaking... (Mic paused)";
   }
+  useEffect(() => {
+    console.group("🖥 Navbar");
+
+    console.log("voiceState:", voiceState);
+
+    console.log("interimTranscript:", interimTranscript);
+
+    console.log("message:", message);
+
+    console.groupEnd();
+
+  }, [voiceState, interimTranscript]);
 
   return (
-    <div 
-      role="status" 
-      aria-live="polite" 
+    <div
+      role="status"
+      aria-live="polite"
       className="w-full bg-accent text-accent-foreground p-3 flex items-center justify-center gap-3 border-b border-border shadow-sm"
     >
       <div className={`w-3 h-3 rounded-full bg-primary ${isPulsing ? "animate-pulse" : ""}`} aria-hidden="true" />

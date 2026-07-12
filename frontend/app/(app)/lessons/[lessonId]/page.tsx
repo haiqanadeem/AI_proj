@@ -43,6 +43,22 @@ export default function LessonDetailPage() {
              localStorage.setItem("pendingCodeExample", lesson.code_example);
           }
           router.push("/code-lab");
+        },
+        nextLesson: () => {
+          if (lesson.next_lesson_id) {
+            speak("Opening next lesson...");
+            router.push(`/lessons/${lesson.next_lesson_id}`);
+          } else {
+            speak("There is no next lesson. You have successfully completed all the lessons.");
+          }
+        },
+        prevLesson: () => {
+          if (lesson.prev_lesson_id) {
+            speak("Opening previous lesson...");
+            router.push(`/lessons/${lesson.prev_lesson_id}`);
+          } else {
+            speak("This is the first lesson. There is no previous lesson.");
+          }
         }
       });
     }

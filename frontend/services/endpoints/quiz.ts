@@ -20,6 +20,6 @@ export async function submitQuiz(
 ): Promise<QuizResultResponse> {
   return apiFetch<QuizResultResponse>("/quiz/submit", {
     method: "POST",
-    body: JSON.stringify({ lesson_id, quiz_data, answers, time_taken_sec }),
+    body: JSON.stringify({ lesson_id, quiz_json: quiz_data, answers, time_taken_sec }),
   });
 }

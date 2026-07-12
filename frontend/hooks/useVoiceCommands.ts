@@ -13,7 +13,10 @@ export function useVoiceCommands() {
     submitCode: () => void,
     speakHelp: () => void,
     repeatLast: () => void,
-    logout: () => void
+    logout: () => void,
+    nextLesson: () => void,
+    prevLesson: () => void,
+    speak: (text: string, force?: boolean) => void
   ) => {
     routeIntent(
       intentData,
@@ -24,7 +27,10 @@ export function useVoiceCommands() {
       submitCode,
       logout,
       speakHelp,
-      repeatLast
+      repeatLast,
+      nextLesson,
+      prevLesson,
+      speak
     );
   };
 

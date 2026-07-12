@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useVoice } from "@/contexts/VoiceContext";
 
 export default function SettingsPage() {
-  const { speak, setPageActions } = useVoice();
+  const { speak, setPageActions, voices, preferredVoice, changeVoice } = useVoice();
 
   useEffect(() => {
     document.title = "Settings & Help — CodeSight AI";
@@ -28,6 +28,33 @@ export default function SettingsPage() {
           <li><strong>"Submit Code"</strong>: Run code in the Code Lab.</li>
           <li><strong>"Ask Tutor"</strong>: Go to the AI Tutor page.</li>
         </ul>
+      </section>
+
+      <section className="p-6 bg-card border border-border rounded-lg shadow-sm">
+        <h2 className="text-2xl font-bold mb-4">Voice Settings</h2>
+        <div className="space-y-4">
+          <p className="text-muted-foreground">Select your preferred assistant voice. When you change the voice, it will speak a sample phrase.</p>
+          <div className="flex flex-col space-y-2 max-w-md">
+            <label htmlFor="voice-select" className="font-semibold text-lg">Available Voices</label>
+            <select 
+              id="voice-select"
+              className="p-3 border border-border rounded bg-background text-foreground text-lg focus:ring-2 focus:ring-primary outline-none"
+              value={preferredVoice?.voiceURI || ""}
+              onChange={(e) => {
+                changeVoice(e.target.value);
+                // Play sample with the new voice immediately
+                speak("Hello, I am your new voice assistant.", true);
+              }}
+            >
+              {voices.length === 0 && <option value="">Loading voices...</option>}
+              {voices.map(voice => (
+                <option key={voice.voiceURI} value={voice.voiceURI}>
+                  {voice.name} ({voice.lang})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </section>
 
       <section className="p-6 bg-card border border-border rounded-lg shadow-sm">

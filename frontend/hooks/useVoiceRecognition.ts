@@ -17,7 +17,7 @@ export function useVoiceRecognition() {
   const captureCommand = useCallback((onInterim?: (text: string) => void): Promise<{ blob: Blob | null, text: string | null }> => {
     return new Promise(async (resolve, reject) => {
       resolveCaptureRef.current = resolve;
-      
+
       const startMediaRecorderFallback = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -52,54 +52,56 @@ export function useVoiceRecognition() {
       const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRec) {
         try {
-            const recognizer = new SpeechRec();
-            speechRecRef.current = recognizer;
-            recognizer.continuous = false;
-            recognizer.interimResults = true;
-            recognizer.lang = "en-US";
-            
-            let finalStr = "";
-            let fallbackTriggered = false;
-            
-            recognizer.onresult = (e: any) => {
-                let interimStr = "";
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) finalStr += e.results[i][0].transcript;
-                    else interimStr += e.results[i][0].transcript;
-                }
-                if (onInterim) onInterim((finalStr + " " + interimStr).trim());
-            };
-            
-            recognizer.onend = () => {
-                if (fallbackTriggered) return;
-                
-                if (resolveCaptureRef.current) {
-                    resolveCaptureRef.current({ blob: null, text: finalStr.trim() });
-                    resolveCaptureRef.current = null;
-                }
-            };
-            
-            recognizer.onerror = (e: any) => {
-                if (e.error === 'no-speech') {
-                    if (resolveCaptureRef.current) {
-                        resolveCaptureRef.current({ blob: null, text: "" });
-                        resolveCaptureRef.current = null;
-                    }
-                } else if (e.error === 'not-allowed') {
-                    reject(e);
-                } else {
-                    console.warn("SpeechRec error, falling back to MediaRecorder:", e.error);
-                    fallbackTriggered = true;
-                    startMediaRecorderFallback();
-                }
-            };
-            
-            recognizer.start();
-            return;
-        } catch(e) {
-            console.error("SpeechRec failed to initialize, falling back to MediaRecorder", e);
-            startMediaRecorderFallback();
-            return;
+          const recognizer = new SpeechRec();
+          speechRecRef.current = recognizer;
+          recognizer.continuous = false;
+          recognizer.interimResults = true;
+          recognizer.lang = "en-US";
+
+          let finalStr = "";
+          let fallbackTriggered = false;
+
+          recognizer.onresult = (e: any) => {
+            let interimStr = "";
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+              if (e.results[i].isFinal) finalStr += e.results[i][0].transcript;
+              else interimStr += e.results[i][0].transcript;
+            }
+            if (onInterim) onInterim((finalStr + " " + interimStr).trim());
+          };
+
+          recognizer.onend = () => {
+            if (fallbackTriggered) return;
+
+            if (resolveCaptureRef.current) {
+              resolveCaptureRef.current({ blob: null, text: finalStr.trim() });
+              resolveCaptureRef.current = null;
+            }
+          };
+
+          recognizer.onerror = (e: any) => {
+            if (e.error === 'no-speech') {
+              if (resolveCaptureRef.current) {
+                resolveCaptureRef.current({ blob: null, text: "" });
+                resolveCaptureRef.current = null;
+              }
+            } else if (e.error === 'not-allowed') {
+              console.warn("SpeechRec not-allowed, falling back to MediaRecorder");
+              fallbackTriggered = true;
+              startMediaRecorderFallback();
+            } else {
+              console.warn("SpeechRec error, falling back to MediaRecorder:", e.error);
+              fallbackTriggered = true;
+              startMediaRecorderFallback();
+            }
+          };
+
+          recognizer.start();
+          return;
+        } catch (e) {
+          console.error("SpeechRec failed to initialize, falling back to MediaRecorder", e);
+          startMediaRecorderFallback();
+          return;
         }
       }
 
@@ -109,42 +111,42 @@ export function useVoiceRecognition() {
 
   const stopCaptureAndWait = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
-       if (speechRecRef.current) {
-           try { speechRecRef.current.stop(); } catch(e) {}
-       }
-       if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
-           resolve();
-           return;
-       }
-       
-       const oldResolve = resolveCaptureRef.current;
-       resolveCaptureRef.current = (res) => {
-           if (oldResolve) oldResolve(res);
-           resolve();
-       };
-       
-       mediaRecorderRef.current.stop();
+      if (speechRecRef.current) {
+        try { speechRecRef.current.stop(); } catch (e) { }
+      }
+      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+        resolve();
+        return;
+      }
+
+      const oldResolve = resolveCaptureRef.current;
+      resolveCaptureRef.current = (res) => {
+        if (oldResolve) oldResolve(res);
+        resolve();
+      };
+
+      mediaRecorderRef.current.stop();
     });
   }, []);
-  
+
   const processCommand = useCallback(async (input: { blob: Blob | null, text: string | null }): Promise<IntentResponse> => {
-      let transcriptToClassify = input.text;
-      
-      // If we don't have text (fallback was used), transcribe the blob via backend
-      if (!transcriptToClassify && input.blob) {
-          const transcribeRes = await transcribeAudio(input.blob);
-          if (!transcribeRes.transcript) {
-              throw new Error("No transcript detected");
-          }
-          transcriptToClassify = transcribeRes.transcript;
+    let transcriptToClassify = input.text;
+
+    // If we don't have text (fallback was used), transcribe the blob via backend
+    if (!transcriptToClassify && input.blob) {
+      const transcribeRes = await transcribeAudio(input.blob);
+      if (!transcribeRes.transcript) {
+        throw new Error("No transcript detected");
       }
-      
-      if (!transcriptToClassify) {
-          throw new Error("Empty transcript");
-      }
-      
-      const intentRes = await classifyIntent(transcriptToClassify);
-      return intentRes;
+      transcriptToClassify = transcribeRes.transcript;
+    }
+
+    if (!transcriptToClassify) {
+      throw new Error("Empty transcript");
+    }
+
+    const intentRes = await classifyIntent(transcriptToClassify);
+    return intentRes;
   }, []);
 
   return { isMediaRecorderSupported, captureCommand, stopCaptureAndWait, processCommand };

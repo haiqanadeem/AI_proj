@@ -11,25 +11,60 @@ export function useTTS() {
   const lastSpokenTextRef = useRef<string>("");
   const lastSpokenTimeRef = useRef<number>(0);
 
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [preferredVoice, setPreferredVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis;
+      
+      const loadVoices = () => {
+        const availableVoices = window.speechSynthesis.getVoices();
+        setVoices(availableVoices);
+        
+        const savedVoiceURI = localStorage.getItem("codesight_preferred_voice");
+        if (savedVoiceURI) {
+          const match = availableVoices.find(v => v.voiceURI === savedVoiceURI);
+          if (match) {
+            setPreferredVoice(match);
+            preferredVoiceRef.current = match;
+          }
+        }
+      };
+
+      loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
     }
   }, []);
+
+  const changeVoice = useCallback((voiceURI: string) => {
+    const match = voices.find(v => v.voiceURI === voiceURI);
+    if (match) {
+      setPreferredVoice(match);
+      preferredVoiceRef.current = match;
+      localStorage.setItem("codesight_preferred_voice", match.voiceURI);
+    }
+  }, [voices]);
 
   const speakNext = useCallback(() => {
     if (!synthRef.current || queueRef.current.length === 0) {
       setTimeout(() => {
         setIsSpeaking(false);
         isSpeakingRef.current = false;
-      }, 250); // debounce
+      }, 250);
       return;
     }
     const text = queueRef.current.shift()!;
     lastUtteranceRef.current = text;
     
     const utterance = new SpeechSynthesisUtterance(text);
-    activeUtteranceRef.current = utterance; // Prevent garbage collection
+    if (preferredVoiceRef.current) {
+      utterance.voice = preferredVoiceRef.current;
+    }
+    activeUtteranceRef.current = utterance;
     
     utterance.onend = () => {
       activeUtteranceRef.current = null;
@@ -58,7 +93,6 @@ export function useTTS() {
     }
 
     const now = Date.now();
-    // Deduplicate exact same text if triggered within 1000ms (fixes React StrictMode double-fire)
     if (lastSpokenTextRef.current === text && (now - lastSpokenTimeRef.current) < 1000) {
       return;
     }
@@ -83,11 +117,10 @@ export function useTTS() {
 
   const repeatLast = useCallback(() => {
     if (lastUtteranceRef.current) {
-      // Bypass deduplication timestamp for manual repeat
       lastSpokenTimeRef.current = 0; 
       speak(lastUtteranceRef.current);
     }
   }, [speak]);
 
-  return { speak, stopSpeaking, isSpeaking, repeatLast };
+  return { speak, stopSpeaking, isSpeaking, repeatLast, voices, preferredVoice, changeVoice };
 }

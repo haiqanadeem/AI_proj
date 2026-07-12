@@ -9,7 +9,7 @@ export function useVoiceAuth() {
   const [state, setState] = useState<VoiceAuthState>("IDLE");
   const [email, setEmail] = useState("");
   const { login } = useAuth();
-  
+
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
@@ -30,8 +30,8 @@ export function useVoiceAuth() {
 
   const speak = useCallback((text: string, onEnd?: () => void) => {
     if (!synthRef.current) {
-        if(onEnd) onEnd();
-        return;
+      if (onEnd) onEnd();
+      return;
     }
     synthRef.current.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -45,21 +45,21 @@ export function useVoiceAuth() {
         reject(new Error("SpeechRecognition not available"));
         return;
       }
-      
+
       const recognition = recognitionRef.current;
-      
+
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript.trim().toLowerCase();
         resolve(transcript);
       };
-      
+
       recognition.onerror = (event: any) => {
         if (event.error === "not-allowed") {
-           setState("UNAVAILABLE");
+          setState("UNAVAILABLE");
         }
         reject(new Error(event.error));
       };
-      
+
       try {
         recognition.start();
       } catch (e) {
@@ -72,41 +72,41 @@ export function useVoiceAuth() {
     setState("SUBMITTING");
     speak("Logging in...");
     try {
-        await login({ email: e, password: p });
-        setState("DONE");
-        speak("Login successful.");
+      await login({ email: e, password: p });
+      setState("DONE");
+      speak("Login successful.");
     } catch (error) {
-        setState("ERROR");
-        speak("Invalid credentials, try again.", () => {
-            setState("IDLE");
-        });
+      setState("ERROR");
+      speak("Invalid credentials, try again.", () => {
+        setState("IDLE");
+      });
     }
   }, [login, speak]);
 
   const requestPassword = useCallback((currentEmail: string) => {
     setState("AWAITING_PASSWORD");
     speak("Please say your password. Note: your password will be spoken aloud to confirm unless you add 'skip confirmation' at the end.", async () => {
-        try {
-            const transcript = await captureSpeech();
-            const skipRequested = transcript.includes("skip confirmation");
-            const parsedPassword = transcript.replace(/skip confirmation/g, "").replace(/\s+/g, "");
-            
-            if (skipRequested) {
-                submitLogin(currentEmail, parsedPassword);
+      try {
+        const transcript = await captureSpeech();
+        const skipRequested = transcript.includes("skip confirmation");
+        const parsedPassword = transcript.replace(/skip confirmation/g, "").replace(/\s+/g, "");
+
+        if (skipRequested) {
+          submitLogin(currentEmail, parsedPassword);
+        } else {
+          setState("CONFIRMING_PASSWORD");
+          speak(`I heard ${parsedPassword}. Say yes or try again.`, async () => {
+            const confirmation = await captureSpeech();
+            if (confirmation.includes("yes") || confirmation.includes("correct") || confirmation.includes("yeah")) {
+              submitLogin(currentEmail, parsedPassword);
             } else {
-                setState("CONFIRMING_PASSWORD");
-                speak(`I heard ${parsedPassword}. Say yes or try again.`, async () => {
-                    const confirmation = await captureSpeech();
-                    if (confirmation.includes("yes") || confirmation.includes("correct") || confirmation.includes("yeah")) {
-                        submitLogin(currentEmail, parsedPassword);
-                    } else {
-                        requestPassword(currentEmail);
-                    }
-                });
+              requestPassword(currentEmail);
             }
-        } catch (e) {
-            speak("I didn't catch that. Please say your password again.", () => requestPassword(currentEmail));
+          });
         }
+      } catch (e) {
+        speak("I didn't catch that. Please say your password again.", () => requestPassword(currentEmail));
+      }
     });
   }, [captureSpeech, speak, submitLogin]);
 
@@ -118,13 +118,13 @@ export function useVoiceAuth() {
         const parsedEmail = transcript.replace(/\s+/g, "").replace(/at/g, "@").replace(/dot/g, ".");
         setEmail(parsedEmail);
         setState("CONFIRMING_EMAIL");
-        
+
         speak(`I heard ${parsedEmail}. Is that correct? Say yes or try again.`, async () => {
           const confirmation = await captureSpeech();
           if (confirmation.includes("yes") || confirmation.includes("correct") || confirmation.includes("yeah")) {
-             requestPassword(parsedEmail);
+            requestPassword(parsedEmail);
           } else {
-             requestEmail(); 
+            requestEmail();
           }
         });
       } catch (e) {

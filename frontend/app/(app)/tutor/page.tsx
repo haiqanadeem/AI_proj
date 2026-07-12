@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { chatWithTutor } from "@/services/endpoints/tutor";
 import { ChatMessage } from "@/components/tutor/ChatMessage";
 import { ChatInput } from "@/components/tutor/ChatInput";
@@ -21,13 +21,45 @@ export default function TutorPage() {
 
   useEffect(() => {
     document.title = "AI Tutor — CodeSight AI";
-    setSessionId(uuidv4());
+
+    // Persist sessionId across navigations
+    let storedSessionId = typeof window !== "undefined" ? sessionStorage.getItem("tutorSessionId") : null;
+    if (!storedSessionId) {
+      storedSessionId = uuidv4();
+      if (typeof window !== "undefined") sessionStorage.setItem("tutorSessionId", storedSessionId);
+    }
+    setSessionId(storedSessionId);
     setPageActions({});
-    
-    const initialMsg = "Hello! I am your CodeSight AI Tutor. What programming question can I help you with?";
-    setMessages([{ role: "tutor", content: initialMsg }]);
-    if (typeof window !== "undefined") {
+
+    // Check for pending query FIRST
+    const pending = typeof window !== "undefined" ? sessionStorage.getItem("pendingTutorQuery") : null;
+
+    if (pending) {
+      // If we have a pending query, don't say the greeting, just jump straight into answering
+      sessionStorage.removeItem("pendingTutorQuery");
+
+      // Initialize with the user's message immediately
+      setMessages([{ role: "user", content: pending }]);
+
+      // Fire off the API call immediately
+      setLoading(true);
+      chatWithTutor(pending, storedSessionId).then(response => {
+        setMessages(prev => [...prev, { role: "tutor", content: response.response }]);
+        speak(response.response, true); // Cancel "Asking tutor..." and read the answer
+      }).catch(e => {
+        console.error(e);
+        speak("Sorry, I had trouble answering that.", true);
+      }).finally(() => {
+        setLoading(false);
+      });
+
+    } else {
+      // Normal flow: empty page
+      const initialMsg = "Hello! I am your CodeSight AI Tutor. What programming question can I help you with?";
+      setMessages([{ role: "tutor", content: initialMsg }]);
+      if (typeof window !== "undefined") {
         speak(initialMsg, true);
+      }
     }
   }, [setPageActions, speak]);
 
@@ -35,7 +67,7 @@ export default function TutorPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async (msg: string) => {
+  const handleSend = useCallback(async (msg: string) => {
     setMessages(prev => [...prev, { role: "user", content: msg }]);
     setLoading(true);
     try {
@@ -48,7 +80,16 @@ export default function TutorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId, speak]);
+
+  useEffect(() => {
+    const handleVoiceAskTutor = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      handleSend(customEvent.detail);
+    };
+    window.addEventListener("voice-ask-tutor", handleVoiceAskTutor);
+    return () => window.removeEventListener("voice-ask-tutor", handleVoiceAskTutor);
+  }, [handleSend]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] max-h-[800px] border border-border rounded-lg shadow-sm bg-card overflow-hidden">

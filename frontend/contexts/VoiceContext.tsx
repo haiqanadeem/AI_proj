@@ -18,35 +18,39 @@ interface VoiceContextType {
   startManualCapture: () => void;
   speak: (text: string, clearFirst?: boolean) => void;
   stopSpeaking: () => void;
-  // page-specific action setters
+  voices: SpeechSynthesisVoice[];
+  preferredVoice: SpeechSynthesisVoice | null;
+  changeVoice: (voiceURI: string) => void;
   setPageActions: (actions: {
     readLesson?: () => void;
     startQuiz?: () => void;
     submitCode?: () => void;
+    nextLesson?: () => void;
+    prevLesson?: () => void;
   }) => void;
 }
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
 
 const playBeep = () => {
-    try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 800; // 800 Hz beep
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Low volume
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.15); // 150ms beep
-    } catch(e) {}
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 800;
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.15);
+  } catch (e) { }
 };
 
 export function VoiceProvider({ children }: { children: React.ReactNode }) {
-  const [voiceState, setVoiceState] = useState<VoiceState>(VoiceState.VOICE_UNAVAILABLE);
+  const [voiceState, setVoiceState] = useState<VoiceState>(VoiceState.AMBIENT_UNAVAILABLE);
   const [interimTranscript, setInterimTranscript] = useState<string>("");
-  const voiceStateRef = useRef<VoiceState>(VoiceState.VOICE_UNAVAILABLE);
+  const voiceStateRef = useRef<VoiceState>(VoiceState.AMBIENT_UNAVAILABLE);
   const hasInitializedRef = useRef(false);
   const { logout } = useAuth();
 
@@ -54,15 +58,16 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     readLesson?: () => void;
     startQuiz?: () => void;
     submitCode?: () => void;
+    nextLesson?: () => void;
+    prevLesson?: () => void;
   }>({});
 
-  // Helper to update both state and ref in sync
   const updateVoiceState = useCallback((newState: VoiceState) => {
     voiceStateRef.current = newState;
     setVoiceState(newState);
   }, []);
 
-  const { speak, stopSpeaking, isSpeaking, repeatLast } = useTTS();
+  const { speak, stopSpeaking, isSpeaking, repeatLast, voices, preferredVoice, changeVoice } = useTTS();
   const { handleIntent } = useVoiceCommands();
   const { isMediaRecorderSupported, captureCommand, stopCaptureAndWait, processCommand } = useVoiceRecognition();
 
@@ -73,41 +78,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const returnToAmbient = useCallback(() => {
     const current = voiceStateRef.current;
     if (current === VoiceState.VOICE_UNAVAILABLE || current === VoiceState.MIC_DENIED) return;
-    updateVoiceState(VoiceState.VOICE_UNAVAILABLE); // Instead of ambient listening, just return to unavailable
-    // if (current === VoiceState.AMBIENT_UNAVAILABLE) {
-    //   updateVoiceState(VoiceState.AMBIENT_UNAVAILABLE);
-    //   return;
-    // }
-    // updateVoiceState(VoiceState.AMBIENT_LISTENING);
-    // startAmbientRef.current();
+    updateVoiceState(VoiceState.AMBIENT_UNAVAILABLE);
   }, [updateVoiceState]);
 
-  /* Commenting out Ambient Listening for now
-  const onGreetingDetected = useCallback(async () => {
-    await stopAmbientRef.current();
-    updateVoiceState(VoiceState.ACKNOWLEDGING);
-    speak("Yes, I'm here. What's your call?");
-
-    // Wait a moment for TTS to finish before capturing
-    setTimeout(() => {
-      startManualCaptureRef.current();
-    }, 2000);
-  }, [speak, updateVoiceState]);
-
-  const onMicDenied = useCallback(() => {
-    updateVoiceState(VoiceState.MIC_DENIED);
-  }, [updateVoiceState]);
-
-  const { isSupported: isAmbientSupported, startAmbient, stopAmbientAndWait } = useSpeechRecognition(onGreetingDetected, onMicDenied);
-
-  // Stable refs for functions that need to be called from callbacks
-  const startAmbientRef = useRef(startAmbient);
-  startAmbientRef.current = startAmbient;
-  const stopAmbientRef = useRef(stopAmbientAndWait);
-  stopAmbientRef.current = stopAmbientAndWait;
-  */
-
-  // ONE-TIME initialization — no voiceState in deps
   useEffect(() => {
     if (typeof window === "undefined" || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
@@ -115,42 +88,35 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     if (!isMediaRecorderSupported) {
       updateVoiceState(VoiceState.VOICE_UNAVAILABLE);
     } else {
-      // With ambient off, just stay in unavailable/idle state
-      updateVoiceState(VoiceState.VOICE_UNAVAILABLE); 
+      updateVoiceState(VoiceState.AMBIENT_UNAVAILABLE);
     }
   }, [isMediaRecorderSupported, updateVoiceState]);
 
-  /* Commenting out Ambient Pause logic
-  // Pause ambient ONLY when TTS is speaking AND we're actually in ambient mode
-  useEffect(() => {
+  const startManualCapture = useCallback(async () => {
     const current = voiceStateRef.current;
-    // Don't touch the mic if we're in an active capture or processing state
-    if (current === VoiceState.ACTIVE_LISTENING || current === VoiceState.PROCESSING || current === VoiceState.RESPONDING || current === VoiceState.ACKNOWLEDGING) {
+    if (current === VoiceState.VOICE_UNAVAILABLE) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+    } catch (e) {
+      console.error("Microphone permission denied", e);
+      updateVoiceState(VoiceState.MIC_DENIED);
       return;
     }
-    if (isSpeaking && current === VoiceState.AMBIENT_LISTENING) {
-      stopAmbientAndWait();
-    } else if (!isSpeaking && current === VoiceState.AMBIENT_LISTENING) {
-      startAmbient();
-    }
-  }, [isSpeaking, stopAmbientAndWait, startAmbient]);
-  */
 
-  const startManualCapture = useCallback(async () => {
-    // Force stop any ongoing speech (like the lesson being read)
     stopSpeaking();
-    
-    // Play a small beep so user knows it's active
     playBeep();
-
     updateVoiceState(VoiceState.ACTIVE_LISTENING);
     setInterimTranscript("");
     announceToScreenReader("Listening for your command...");
 
     try {
       const startTime = Date.now();
-      const captureResult = await captureCommand((text) => setInterimTranscript(text));
-      
+      const captureResult = await captureCommand((text) => {
+        setInterimTranscript(text);
+      });
+
       updateVoiceState(VoiceState.PROCESSING);
       announceToScreenReader("Processing your command...");
 
@@ -158,7 +124,6 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         const intentRes = await processCommand(captureResult);
         const executionTime = Date.now() - startTime;
 
-        // Log it
         createVoiceLog(intentRes.raw_command, intentRes.intent, intentRes.confidence, executionTime).catch(console.error);
 
         updateVoiceState(VoiceState.RESPONDING);
@@ -170,7 +135,6 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Route intent
         handleIntent(
           intentRes,
           pageActionsRef.current.readLesson || (() => speak("Reading lesson is not available here.")),
@@ -179,7 +143,10 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
           pageActionsRef.current.submitCode || (() => speak("Code lab is not available here.")),
           () => speak("Use Alt plus V to toggle voice, or press Alt plus H for shortcuts."),
           repeatLast,
-          logout
+          logout,
+          pageActionsRef.current.nextLesson || (() => speak("You must be inside a lesson to go to the next lesson.")),
+          pageActionsRef.current.prevLesson || (() => speak("You must be inside a lesson to go to the previous lesson.")),
+          speak
         );
 
         setTimeout(returnToAmbient, 4000);
@@ -195,7 +162,6 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [stopSpeaking, captureCommand, processCommand, handleIntent, speak, returnToAmbient, repeatLast, logout, updateVoiceState]);
 
-  // Keep a ref so callbacks (like onGreetingDetected) can call the latest version
   const startManualCaptureRef = useRef(startManualCapture);
   startManualCaptureRef.current = startManualCapture;
 
@@ -208,6 +174,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         startManualCapture,
         speak,
         stopSpeaking,
+        voices,
+        preferredVoice,
+        changeVoice,
         setPageActions
       }}
     >

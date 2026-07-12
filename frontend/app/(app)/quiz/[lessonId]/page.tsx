@@ -68,8 +68,24 @@ export default function QuizPage() {
     return (
       <div className="max-w-2xl mx-auto p-8 bg-card border border-border rounded-lg shadow-sm text-center">
         <h1 className="text-3xl font-bold mb-4">Quiz Results</h1>
-        <p className="text-xl mb-4">Score: <strong>{result.score} / {result.total}</strong></p>
-        <p className="text-lg mb-8">{result.feedback}</p>
+        <p className="text-xl mb-4">
+          Score: <strong>{Math.round(result.score)}%</strong> 
+          <span className="text-muted-foreground text-base ml-2">({(result as any).correct_count || 0} / {(result as any).total_questions || result.total})</span>
+        </p>
+        
+        <div className="space-y-4 text-left mb-8">
+          {Array.isArray(result.feedback) ? result.feedback.map((f: any, idx: number) => (
+            <div key={f.question_id || idx} className={`p-4 border rounded ${f.correct ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50'}`}>
+              <p className="font-semibold">Question {idx + 1}: {f.correct ? '✅ Correct' : '❌ Incorrect'}</p>
+              <p className="mt-2 text-sm text-muted-foreground">Your answer: {f.your_answer}</p>
+              {!f.correct && <p className="text-sm text-muted-foreground">Correct answer: {f.correct_answer}</p>}
+              <p className="mt-2">{f.explanation}</p>
+            </div>
+          )) : (
+            <p className="text-lg">{typeof result.feedback === 'string' ? result.feedback : ''}</p>
+          )}
+        </div>
+
         <button onClick={() => router.push(`/lessons/${lessonId}`)} className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-accent">
           Return to Lesson
         </button>

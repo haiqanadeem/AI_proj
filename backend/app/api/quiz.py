@@ -29,18 +29,22 @@ class QuizSubmitRequest(BaseModel):
 @router.post("/generate")
 def generate_quiz(
     req: QuizGenerateRequest,
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        # Generate using Gemini
-        quiz = generate_quiz_for_topic(
-            topic=req.topic,
-            difficulty=req.difficulty,
-            level=current_user.level
-        )
-        # Assign a temp quiz ID
+        lesson = db.query(Lesson).filter(Lesson.id == req.lesson_id).first()
+        if not lesson:
+            raise HTTPException(status_code=404, detail="Lesson not found")
+        
+        if not lesson.quiz_json:
+            raise HTTPException(status_code=404, detail="Quiz not available for this lesson")
+            
+        quiz = dict(lesson.quiz_json)
         quiz["quiz_id"] = str(uuid.uuid4())
         return quiz
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Quiz generate endpoint error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

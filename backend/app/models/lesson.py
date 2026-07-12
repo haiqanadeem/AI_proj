@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 
@@ -17,6 +17,7 @@ class Lesson(Base):
     estimated_minutes = Column(Integer, default=15)
     vector_id = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    quiz_json = Column(JSON, nullable=True)
 
     # Relationships
     progress_records = relationship("Progress", back_populates="lesson")

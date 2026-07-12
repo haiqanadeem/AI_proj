@@ -26,6 +26,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+        window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance("Login page. Enter your email and password, then press the voice button to login by voice, or press Enter to submit.");
         window.speechSynthesis.speak(msg);
     }

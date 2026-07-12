@@ -306,21 +306,32 @@ Analogy: A quality inspector at a factory. Before shipping products (deploying c
 ]
 
 def seed_db(db: Session):
-    print("Checking database for existing lessons...")
+    from app.ai.quiz_generator import generate_quiz_for_topic
+    import time
+    print("Checking database for existing lessons and generating quizzes...")
     
     new_lessons_added = []
     for l_data in LESSONS_DATA:
         existing = db.query(Lesson).filter(Lesson.slug == l_data["slug"]).first()
         if not existing:
-            lesson = Lesson(**l_data)
+            print(f"Generating quiz for lesson: {l_data['title']}...")
+            quiz = generate_quiz_for_topic(l_data["topic"], l_data["difficulty"], "beginner")
+            lesson = Lesson(**l_data, quiz_json=quiz)
             db.add(lesson)
             new_lessons_added.append(l_data["slug"])
+            time.sleep(5) # Respect Gemini API limit (15 RPM)
+        elif not existing.quiz_json:
+            print(f"Generating missing quiz for existing lesson: {existing.title}...")
+            quiz = generate_quiz_for_topic(existing.topic, existing.difficulty, "beginner")
+            existing.quiz_json = quiz
+            new_lessons_added.append(existing.slug)
+            time.sleep(5)
             
     if new_lessons_added:
         db.commit()
-        print(f"Seeded {len(new_lessons_added)} new lessons to SQL database successfully!")
+        print(f"Seeded or updated {len(new_lessons_added)} lessons/quizzes to SQL database successfully!")
     else:
-        print("All lessons are already seeded in SQL database.")
+        print("All lessons and their quizzes are already seeded in SQL database.")
 
     # Seeding ChromaDB vector store
     try:
