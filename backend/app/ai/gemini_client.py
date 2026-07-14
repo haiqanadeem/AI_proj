@@ -7,10 +7,18 @@ from app.config import settings
 # Configure Gemini globally
 if settings.GOOGLE_API_KEY:
     genai.configure(api_key=settings.GOOGLE_API_KEY)
+    try:
+        print("--- AVAILABLE MODELS FOR YOUR API KEY ---")
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                print(f"  - {m.name}")
+        print("-----------------------------------------")
+    except Exception as e:
+        print(f"Failed to list models: {e}")
 
-# Define robust retry logic: wait 2^x * 1 second between each retry, up to 10 seconds, max 4 attempts
-@retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=1, min=2, max=10))
-def call_gemini(prompt: str, expect_json: bool = True, model_name: str = "gemini-3.5-flash") -> str:
+# Define robust retry logic: wait 2^x * 1 second between each retry, up to 4 seconds, max 3 attempts
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=4))
+def call_gemini(prompt: str, expect_json: bool = True, model_name: str = "gemini-flash-latest") -> str:
     """
     Robust centralized client to call the Gemini API.
     Handles retries, exponential backoff, and JSON structuring.
@@ -43,7 +51,7 @@ def call_gemini(prompt: str, expect_json: bool = True, model_name: str = "gemini
         print(f"Gemini API Exception: {e}")
         raise e
 
-def call_gemini_json(prompt: str, model_name: str = "gemini-1.5-flash") -> dict:
+def call_gemini_json(prompt: str, model_name: str = "gemini-flash-latest") -> dict:
     """
     Calls Gemini API and safely parses the JSON response.
     """

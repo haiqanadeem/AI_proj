@@ -24,9 +24,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance("Registration page. Enter your name, email, and password, then press Enter to submit.");
-        window.speechSynthesis.speak(msg);
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance("Registration page. Enter your name, email, and password, then press Enter to submit.");
+      window.speechSynthesis.speak(msg);
     }
   }, []);
 

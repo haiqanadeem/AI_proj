@@ -12,7 +12,7 @@ export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
   const { speak, setPageActions } = useVoice();
-  
+
   const [lessonId, setLessonId] = useState<number>(0);
   const [quiz, setQuiz] = useState<QuizGenerateResponse | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -69,10 +69,10 @@ export default function QuizPage() {
       <div className="max-w-2xl mx-auto p-8 bg-card border border-border rounded-lg shadow-sm text-center">
         <h1 className="text-3xl font-bold mb-4">Quiz Results</h1>
         <p className="text-xl mb-4">
-          Score: <strong>{Math.round(result.score)}%</strong> 
+          Score: <strong>{Math.round(result.score)}%</strong>
           <span className="text-muted-foreground text-base ml-2">({(result as any).correct_count || 0} / {(result as any).total_questions || result.total})</span>
         </p>
-        
+
         <div className="space-y-4 text-left mb-8">
           {Array.isArray(result.feedback) ? result.feedback.map((f: any, idx: number) => (
             <div key={f.question_id || idx} className={`p-4 border rounded ${f.correct ? 'bg-green-500/10 border-green-500/50' : 'bg-red-500/10 border-red-500/50'}`}>
@@ -96,20 +96,20 @@ export default function QuizPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Quiz: {quiz.topic}</h1>
-      
+
       {quiz.questions.map((q, i) => (
-        <QuizQuestionCard 
-          key={q.id} 
+        <QuizQuestionCard
+          key={q.id}
           index={i}
-          question={q} 
-          selectedValue={answers[q.id.toString()] || ""} 
+          question={q}
+          selectedValue={answers[q.id.toString()] || ""}
           onSelect={(val) => handleSelect(q.id, val)}
         />
       ))}
-      
+
       <div className="flex justify-end mt-8">
-        <button 
-          onClick={handleSubmit} 
+        <button
+          onClick={handleSubmit}
           disabled={submitting || Object.keys(answers).length < quiz.questions.length}
           className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
         >

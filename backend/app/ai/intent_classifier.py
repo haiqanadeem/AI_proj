@@ -53,6 +53,146 @@ def classify_voice_intent(command: str) -> dict:
     if not command or not command.strip():
         return {"intent": "HELP", "params": {}, "confidence": 1.0}
         
+    cmd_lower = command.lower().strip()
+    
+    # 1. LOGOUT (Always check first)
+    if any(term in cmd_lower for term in ["logout", "log out", "sign out"]):
+        return {"intent": "LOGOUT", "params": {}, "confidence": 1.0}
+        
+    # 1.5. OPEN IN CODE LAB (Triggers SUBMIT_CODE intent to copy lesson code and open editor)
+    codelab_triggers = ["open in code lab", "open in codelab", "open this in code lab", "open this in codelab", "open lesson in code lab", "open lesson in codelab"]
+    if any(phrase in cmd_lower for phrase in codelab_triggers):
+        return {"intent": "SUBMIT_CODE", "params": {}, "confidence": 1.0}
+        
+    # 1.6. SUBMIT_CODE (Local matching for executing code in the editor)
+    submit_code_triggers = ["submit code", "submit my code", "run my code", "run code", "execute code", "execute my code", "evaluate code", "evaluate my code", "submit the code", "run the code"]
+    if any(phrase in cmd_lower for phrase in submit_code_triggers):
+        return {"intent": "SUBMIT_CODE", "params": {}, "confidence": 1.0}
+        
+    # 2. EVALUATE_PROGRESS (Check before question logic as it uses question words)
+    progress_queries = [
+        "how am i doing", "how is my progress", "evaluate my progress",
+        "show me my progress", "what is my progress", "my progress",
+        "show my progress", "how am i doing so far"
+    ]
+    if any(phrase in cmd_lower for phrase in progress_queries) or cmd_lower == "progress":
+        return {"intent": "EVALUATE_PROGRESS", "params": {}, "confidence": 1.0}
+
+    # 2.5. READ_LESSON (Local triggers to speak lesson content or written code)
+    read_triggers = ["read lesson", "read the lesson", "start reading", "speak lesson", "read code", "read my code", "read the code", "what is in the editor", "read what is written in the code", "read written code", "read editor", "speak code"]
+    if any(phrase in cmd_lower for phrase in read_triggers):
+        return {"intent": "READ_LESSON", "params": {}, "confidence": 1.0}
+        
+    # 2.6. STOP_READING (Local triggers to stop speaking)
+    stop_triggers = ["stop reading", "stop speaking", "stop", "shut up", "stop reader"]
+    if any(phrase in cmd_lower for phrase in stop_triggers):
+        return {"intent": "STOP_READING", "params": {}, "confidence": 1.0}
+
+    # 3. OPEN_LESSON / START_QUIZ (Flexible local matching)
+    open_lesson_triggers = ["open lesson", "show lesson", "start lesson", "load lesson", "go to lesson", "open chapter", "open topic", "open "]
+    matched_trigger = None
+    for trigger in open_lesson_triggers:
+        if trigger in cmd_lower:
+            matched_trigger = trigger
+            break
+            
+    if matched_trigger:
+        parts = cmd_lower.split(matched_trigger, 1)
+        topic = parts[1].strip() if len(parts) > 1 else ""
+        topic = topic.replace("basics", "").replace("chapter", "").strip()
+        
+        # Check if the extracted "topic" is actually a navigation command
+        nav_keywords = {
+            "home": "NAVIGATE_HOME",
+            "lessons": "NAVIGATE_LESSONS",
+            "lesson": "NAVIGATE_LESSONS",
+            "tutor": "NAVIGATE_TUTOR",
+            "code lab": "NAVIGATE_CODE_LAB", "editor": "NAVIGATE_CODE_LAB", "code editor": "NAVIGATE_CODE_LAB",
+            "dashboard": "NAVIGATE_DASHBOARD",
+            "settings": "NAVIGATE_SETTINGS", "setting": "NAVIGATE_SETTINGS",
+            "quiz": "NAVIGATE_QUIZ", "quizzes": "NAVIGATE_QUIZ"
+        }
+        
+        if topic in nav_keywords:
+            return {"intent": nav_keywords[topic], "params": {}, "confidence": 1.0}
+            
+        if topic:
+            return {"intent": "OPEN_LESSON", "params": {"topic": topic}, "confidence": 1.0}
+
+    # 4. START_QUIZ / TAKE_QUIZ (Local matching)
+    quiz_triggers = ["start quiz on", "take quiz on", "open quiz on", "start quiz", "take quiz", "open quiz", "start the quiz", "open the quiz"]
+    matched_quiz_trigger = None
+    for trigger in quiz_triggers:
+        if trigger in cmd_lower:
+            matched_quiz_trigger = trigger
+            break
+            
+    if matched_quiz_trigger:
+        parts = cmd_lower.split(matched_quiz_trigger, 1)
+        topic = parts[1].strip() if len(parts) > 1 else ""
+        # Clean up filler words like "for this lesson", "for the lesson", "this lesson"
+        for filler in ["for this lesson", "for the lesson", "this lesson", "of this lesson", "of the lesson"]:
+            topic = topic.replace(filler, "").strip()
+        # Clean up trailing prepositions
+        if topic in ["for", "of", "on", "this", "the"]:
+            topic = ""
+        return {"intent": "START_QUIZ", "params": {"topic": topic} if topic else {}, "confidence": 1.0}
+
+    # 5. List lessons / topics (LIST_LESSONS) - check before question logic
+    list_topics_phrases = [
+        "what are the topics", "what are the lessons", 
+        "list lessons", "list topics", "list all topics", "list all lessons",
+        "what am i going to learn", "what am i learning", "what will i learn",
+        "tell me the topics", "tell me the lessons",
+        "show me the topics", "show me the lessons",
+        "show all topics", "show all lessons", "read all lessons", "read all topics",
+        "topics list", "lessons list", "lessons name", "topics name"
+    ]
+    if any(phrase in cmd_lower for phrase in list_topics_phrases) or cmd_lower in ["topics", "lessons list", "read lessons"]:
+        return {"intent": "LIST_LESSONS", "params": {}, "confidence": 1.0}
+
+    # 6. Get lesson name by number (GET_LESSON_NAME) - check before question logic
+    if "lesson" in cmd_lower and any(term in cmd_lower for term in ["what is lesson", "name of lesson", "lesson number"]):
+        import re
+        match = re.search(r'\d+', cmd_lower)
+        if match:
+            return {"intent": "GET_LESSON_NAME", "params": {"lesson_number": match.group()}, "confidence": 1.0}
+        
+        # Check for word numbers
+        word_to_num = {
+            "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+            "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+            "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14",
+            "fifteen": "15", "sixteen": "16", "seventeen": "17", "eighteen": "18",
+            "nineteen": "19", "twenty": "20"
+        }
+        for word, num in word_to_num.items():
+            if word in cmd_lower:
+                return {"intent": "GET_LESSON_NAME", "params": {"lesson_number": num}, "confidence": 1.0}
+
+    # 7. NAVIGATION (Only if not asking a general question)
+    is_question = any(q in cmd_lower for q in ["what", "how", "why", "explain", "question", "help me with", "who", "when"]) or "?" in cmd_lower
+    
+    if not is_question:
+        if "home" in cmd_lower:
+            return {"intent": "NAVIGATE_HOME", "params": {}, "confidence": 1.0}
+        if "lesson" in cmd_lower:
+            return {"intent": "NAVIGATE_LESSONS", "params": {}, "confidence": 1.0}
+        if "tutor" in cmd_lower:
+            return {"intent": "NAVIGATE_TUTOR", "params": {}, "confidence": 1.0}
+        if "code lab" in cmd_lower or "code editor" in cmd_lower or "editor" in cmd_lower:
+            return {"intent": "NAVIGATE_CODE_LAB", "params": {}, "confidence": 1.0}
+        if "dashboard" in cmd_lower:
+            return {"intent": "NAVIGATE_DASHBOARD", "params": {}, "confidence": 1.0}
+        if "setting" in cmd_lower:
+            return {"intent": "NAVIGATE_SETTINGS", "params": {}, "confidence": 1.0}
+        if "quiz" in cmd_lower:
+            return {"intent": "NAVIGATE_QUIZ", "params": {}, "confidence": 1.0}
+        if "register" in cmd_lower or "sign up" in cmd_lower or "registration" in cmd_lower:
+            return {"intent": "NAVIGATE_REGISTER", "params": {}, "confidence": 1.0}
+        if "login" in cmd_lower or "sign in" in cmd_lower:
+            return {"intent": "NAVIGATE_LOGIN", "params": {}, "confidence": 1.0}
+
     prompt = INTENT_PROMPT.format(command=command)
     try:
         return call_gemini_json(prompt)
