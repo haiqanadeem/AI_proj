@@ -12,6 +12,27 @@ from app.models.user import User
 from app.ai.intent_classifier import classify_voice_intent
 from typing import Optional
 
+# Initialize WhisperModel once globally (saves 5-10s per request)
+whisper_model = None
+
+def get_whisper_model():
+    global whisper_model
+    if whisper_model is None:
+        try:
+            from faster_whisper import WhisperModel
+            # Using base model for good balance of speed and accuracy on CPU
+            # compute_type="int8" reduces memory usage with almost no quality loss
+            whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+            print("🚀 WhisperModel pre-loaded successfully in background!")
+        except Exception as e:
+            print(f"Error loading WhisperModel: {e}")
+            raise e
+    return whisper_model
+
+# Pre-load model in a background thread so it doesn't block server startup
+import threading
+threading.Thread(target=get_whisper_model, daemon=True).start()
+
 router = APIRouter(tags=["voice"])
 
 class IntentRequest(BaseModel):
@@ -29,11 +50,7 @@ async def transcribe_audio(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        from faster_whisper import WhisperModel
-        # Load the model (this will be downloaded once and cached)
-        # Using base model for good balance of speed and accuracy on CPU
-        # compute_type="int8" reduces memory usage with almost no quality loss
-        model = WhisperModel("base", device="cpu", compute_type="int8")
+        model = get_whisper_model()
         
         # Write upload to temp file using safe uuid
         temp_dir = tempfile.gettempdir()

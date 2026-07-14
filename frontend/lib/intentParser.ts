@@ -50,8 +50,8 @@ export function routeIntent(
           if (data && data.length > 0) {
             let num = parseInt(params?.lesson_number);
             if (isNaN(num)) {
-               speak("I couldn't understand the lesson number.");
-               return;
+              speak("I couldn't understand the lesson number.");
+              return;
             }
             const lesson = data.find(l => l.order_index === num);
             if (lesson) {
