@@ -147,6 +147,27 @@ export function routeIntent(
         window.dispatchEvent(new CustomEvent('voice-submit-form', { detail: params }));
       }
       break;
+    case (INTENTS as any).GO_BACK:
+      if (typeof window !== "undefined") {
+        speak("Going back");
+        window.history.back();
+      }
+      break;
+    case (INTENTS as any).LAST_LESSON:
+      import("@/services/endpoints/progress").then(({ getProgress }) => {
+        getProgress().then((data) => {
+          if (data && data.last_lesson_name && data.last_lesson_id) {
+            speak(`The last lesson you worked on was ${data.last_lesson_name}. Opening it now.`);
+            navigate(`/lessons/${data.last_lesson_id}`);
+          } else {
+            speak("You haven't started any lessons yet.");
+          }
+        }).catch((err) => {
+          console.error(err);
+          speak("I couldn't retrieve your last lesson progress.");
+        });
+      });
+      break;
     default:
       console.warn("Unknown intent:", intent);
       break;

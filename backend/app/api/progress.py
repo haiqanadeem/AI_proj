@@ -60,7 +60,22 @@ def get_student_progress_summary(
         else:
             spoken_summary += "You have solid mastery across all studied topics. "
             
-        spoken_summary += f"Your predicted probability of completing this course is {prediction['completion_probability']} percent."
+        # Get the last lesson that the user started or completed
+        last_progress = db.query(Progress).filter(
+            Progress.user_id == current_user.id
+        ).order_by(Progress.started_at.desc()).first()
+        
+        last_lesson_id = None
+        last_lesson_name = ""
+        if last_progress:
+            lesson = db.query(Lesson).filter(Lesson.id == last_progress.lesson_id).first()
+            if lesson:
+                last_lesson_id = lesson.id
+                last_lesson_name = lesson.title
+
+        spoken_summary += f" Your predicted probability of completing this course is {prediction['completion_probability']} percent."
+        if last_lesson_name:
+            spoken_summary += f" The last lesson you worked on was {last_lesson_name}."
         
         return {
             "user_id": current_user.id,
@@ -70,7 +85,9 @@ def get_student_progress_summary(
             "knowledge_profile": knowledge_profile_dict,
             "completion_prediction": prediction["completion_probability"],
             "at_risk": prediction["at_risk"],
-            "spoken_summary": spoken_summary
+            "spoken_summary": spoken_summary,
+            "last_lesson_id": last_lesson_id,
+            "last_lesson_name": last_lesson_name
         }
     except Exception as e:
         print(f"Progress summary endpoint error: {e}")

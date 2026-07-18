@@ -94,7 +94,7 @@ def classify_intent(
         # If intent is OPEN_LESSON or START_QUIZ, try to resolve the topic to a lesson_id
         if result.get("intent") in ["OPEN_LESSON", "START_QUIZ"] and result.get("params", {}).get("topic"):
             from app.models.lesson import Lesson
-            topic_str = str(result["params"]["topic"]).lower().strip()
+            topic_str = str(result["params"]["topic"]).lower().strip().rstrip(".?!,")
             lessons = db.query(Lesson).all()
             
             best_match = None

@@ -19,7 +19,9 @@ export async function getProgress(): Promise<ProgressResponse> {
       knowledge_profile,
       completion_prediction: `${res.completion_prediction}%`,
       at_risk: res.at_risk || false,
-      spoken_summary: res.spoken_summary || ""
+      spoken_summary: res.spoken_summary || "",
+      last_lesson_id: res.last_lesson_id || null,
+      last_lesson_name: res.last_lesson_name || ""
   };
 }
 
