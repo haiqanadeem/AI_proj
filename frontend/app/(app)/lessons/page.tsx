@@ -24,7 +24,7 @@ export default function LessonsPage() {
       .then(data => {
         setLessons(data);
         if (typeof window !== "undefined") {
-           speak(`Lesson library. ${data.length} lessons available. Use filters or say 'Open lesson name'.`, true);
+          speak(`Lesson library. ${data.length} lessons available. Use filters or say 'Open lesson name'.`, true);
         }
       })
       .catch(console.error)
@@ -35,7 +35,7 @@ export default function LessonsPage() {
     <div>
       <h1 className="text-3xl font-bold mb-6">Lesson Library</h1>
       <LessonFilters onFilter={loadLessons} />
-      
+
       {loading ? (
         <div className="text-lg">Loading lessons...</div>
       ) : (

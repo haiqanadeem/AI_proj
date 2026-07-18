@@ -5,6 +5,8 @@ load_dotenv()
 
 class Settings:
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-72b-instruct")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./codesight.db")

@@ -26,15 +26,22 @@ export default function DashboardPage() {
     getProgress().then((data) => {
       setProgress(data);
       if (typeof window !== "undefined") {
-        speak(`Welcome back, ${user?.name || "Student"}. ${data.spoken_summary}`, true);
+        speak(`Welcome, ${user?.name || "Student"}, to CodeSight AI.`, true);
       }
     }).catch(console.error);
   }, [user, speak, setPageActions]);
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      
+      <div className="border-b border-border pb-6">
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          CodeSight <span className="text-primary">AI</span>
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Voice-First Intelligent Tutoring Platform
+        </p>
+      </div>
+
       <RecommendationCard />
 
       <section>

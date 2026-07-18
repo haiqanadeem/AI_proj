@@ -11,7 +11,8 @@ Possible intents:
 NAVIGATE_HOME, NAVIGATE_LESSONS, NAVIGATE_QUIZ, NAVIGATE_DASHBOARD, NAVIGATE_REGISTER, NAVIGATE_LOGIN,
 NAVIGATE_CODE_LAB, NAVIGATE_TUTOR, NAVIGATE_SETTINGS,
 OPEN_LESSON, GET_LESSON_NAME, LIST_LESSONS, NEXT_LESSON, PREVIOUS_LESSON, START_QUIZ, READ_LESSON,
-STOP_READING, ASK_TUTOR, SUBMIT_CODE, EVALUATE_PROGRESS, LOGOUT, HELP, REPEAT_LAST, DICTATE_TEXT, FILL_FIELD, SUBMIT_FORM
+STOP_READING, ASK_TUTOR, SUBMIT_CODE, EVALUATE_PROGRESS, LOGOUT, HELP, REPEAT_LAST, DICTATE_TEXT, FILL_FIELD, SUBMIT_FORM,
+GO_BACK, LAST_LESSON
 
 Intent explanations:
 - NAVIGATE_HOME: Go to home screen ("home pe jao")
@@ -40,6 +41,8 @@ Intent explanations:
 - DICTATE_TEXT: User wants to type text into a generic field. Extract exact text as "text" parameter.
 - FILL_FIELD: User wants to fill a specific form field (like name, email, password, username). Extract "field" (the semantic name of the field) and "value" (what to fill in). Example: "mera naam hafiz likho" -> {{"field": "name", "value": "hafiz"}}
 - SUBMIT_FORM: User wants to submit the current form or register/login ("register kar do", "submit the form")
+- GO_BACK: Go back to previous screen ("go back", "back", "piche jao")
+- LAST_LESSON: Tell what lesson was learned last or where user stopped ("where was i", "last lesson", "what was the last lesson")
 
 Response format MUST be a single JSON object matching this schema:
 {{
@@ -53,11 +56,23 @@ def classify_voice_intent(command: str) -> dict:
     if not command or not command.strip():
         return {"intent": "HELP", "params": {}, "confidence": 1.0}
         
-    cmd_lower = command.lower().strip()
+    cmd_lower = command.lower().strip().rstrip(".?!,")
     
     # 1. LOGOUT (Always check first)
     if any(term in cmd_lower for term in ["logout", "log out", "sign out"]):
         return {"intent": "LOGOUT", "params": {}, "confidence": 1.0}
+
+    # 1.1 Quick Navigation Helpers (Direct local matches for maximum responsiveness)
+    if any(cmd_lower.startswith(prefix) for prefix in ["open lessons", "go to lessons", "lessons page"]) or cmd_lower in ["lessons", "lessons kholo"]:
+        return {"intent": "NAVIGATE_LESSONS", "params": {}, "confidence": 1.0}
+    if cmd_lower in ["next", "next lesson", "go to next lesson", "agla lesson"]:
+        return {"intent": "NEXT_LESSON", "params": {}, "confidence": 1.0}
+    if cmd_lower in ["previous", "previous lesson", "go to previous lesson", "pichla lesson"]:
+        return {"intent": "PREVIOUS_LESSON", "params": {}, "confidence": 1.0}
+    if cmd_lower in ["go back", "back", "piche", "piche jao"]:
+        return {"intent": "GO_BACK", "params": {}, "confidence": 1.0}
+    if cmd_lower in ["where was i", "last lesson", "what was the last lesson", "what was my last lesson", "where was i learning", "where did i stop", "mein kahan tha"]:
+        return {"intent": "LAST_LESSON", "params": {}, "confidence": 1.0}
         
     # 1.5. OPEN IN CODE LAB (Triggers SUBMIT_CODE intent to copy lesson code and open editor)
     codelab_triggers = ["open in code lab", "open in codelab", "open this in code lab", "open this in codelab", "open lesson in code lab", "open lesson in codelab"]
